@@ -1,0 +1,32 @@
+{
+  "statusData": [
+    { "name": "Complete", "value": 60, "color": "#4CAF50" },
+    { "name": "Error", "value": 20, "color": "#F44336" },
+    { "name": "Pending", "value": 20, "color": "#FFA726" }
+  ],
+  "countryData": [
+    { "name": "Germany", "value": 35, "color": "#2196F3" },
+    { "name": "France", "value": 25, "color": "#9C27B0" },
+    { "name": "UK", "value": 20, "color": "#00BCD4" },
+    { "name": "Spain", "value": 20, "color": "#FFA726" }
+  ],
+  "documentTypeData": [
+    { "name": "Invoice", "value": 50, "color": "#4CAF50" },
+    { "name": "PO", "value": 30, "color": "#2196F3" },
+    { "name": "Credit Note", "value": 20, "color": "#9C27B0" }
+  ],
+  "responseStatusData": [
+    { "name": "Success", "value": 70, "color": "#4CAF50" },
+    { "name": "Failed", "value": 15, "color": "#F44336" },
+    { "name": "Pending", "value": 15, "color": "#FFA726" }
+  ],
+  "timeData": [
+    { "day": "Mon", "value": 145 },
+    { "day": "Tue", "value": 180 },
+    { "day": "Wed", "value": 195 },
+    { "day": "Thu", "value": 165 },
+    { "day": "Fri", "value": 200 },
+    { "day": "Sat", "value": 90 },
+    { "day": "Sun", "value": 70 }
+  ]
+}
