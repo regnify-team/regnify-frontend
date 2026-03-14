@@ -1,13 +1,7 @@
 import { Box, Chip, IconButton, Stack, Typography } from '@mui/material'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
-import {
-  DataGrid,
-  GridToolbarContainer,
-  GridToolbarFilterButton,
-  GridToolbarColumnsButton,
-  GridToolbarDensitySelector,
-} from '@mui/x-data-grid'
+import { DataGrid, GridToolbar } from '@mui/x-data-grid'
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid'
 import {
   Visibility,
@@ -16,25 +10,60 @@ import {
   MoreVert,
 } from '@mui/icons-material'
 
-// Mock Data
-// Mock Data removed - serving from API
+interface ApiResponse<T> {
+  success: boolean
+  message: string
+  data: T
+}
+
+interface InvoiceApiItem {
+  id: number
+  invoiceNumber: string
+  docDate: string
+  proDate: string
+  sender: string
+  receiver: string
+  status: string
+  businessStatus: string
+  providerResponse: string
+}
+
+interface InvoicesPageResponse {
+  content: InvoiceApiItem[]
+}
+
+interface InvoiceRow {
+  id: number
+  invoiceNo: string
+  docDate: string
+  procDate: string
+  sender: string
+  receiver: string
+  status: string
+  businessStatus: string
+  providerResponse: string
+}
 
 function CustomToolbar() {
   return (
-    <GridToolbarContainer
-      sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}
+    <Box
+      sx={{
+        p: 1,
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        display: 'flex',
+        alignItems: 'center',
+      }}
     >
-      <GridToolbarFilterButton />
+      <GridToolbar />
       <Box sx={{ flexGrow: 1 }} />
-      <GridToolbarColumnsButton />
-      <GridToolbarDensitySelector />
-      <IconButton size="small">
+      <IconButton size="small" sx={{ ml: 1 }}>
         <MoreVert />
       </IconButton>
-      <IconButton size="small">
+      <IconButton size="small" sx={{ ml: 1 }}>
         <Refresh />
       </IconButton>
-    </GridToolbarContainer>
+    </Box>
   )
 }
 
@@ -64,8 +93,8 @@ export const InvoiceTable = () => {
           label={params.value}
           size="small"
           sx={{
-            bgcolor: 'rgba(46, 125, 50, 0.12)', // Light green bg
-            color: 'success.main', // Green text
+            bgcolor: 'rgba(46, 125, 50, 0.12)',
+            color: 'success.main',
             fontWeight: 500,
             borderRadius: 1,
           }}
@@ -82,8 +111,8 @@ export const InvoiceTable = () => {
           label={params.value}
           size="small"
           sx={{
-            bgcolor: 'rgba(46, 125, 50, 0.12)', // Light green bg
-            color: 'success.main', // Green text
+            bgcolor: 'rgba(46, 125, 50, 0.12)',
+            color: 'success.main',
             fontWeight: 500,
             borderRadius: 1,
           }}
@@ -108,14 +137,26 @@ export const InvoiceTable = () => {
     },
   ]
 
-  const [rows, setRows] = useState([])
+  const [rows, setRows] = useState<InvoiceRow[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     axios
-      .get('/api/invoices')
+      .get<ApiResponse<InvoicesPageResponse>>('/api/invoices')
       .then((response) => {
-        setRows(response.data)
+        const mappedRows = response.data.data.content.map((invoice) => ({
+          id: invoice.id,
+          invoiceNo: invoice.invoiceNumber,
+          docDate: invoice.docDate,
+          procDate: invoice.proDate,
+          sender: invoice.sender,
+          receiver: invoice.receiver,
+          status: invoice.status,
+          businessStatus: invoice.businessStatus,
+          providerResponse: invoice.providerResponse,
+        }))
+
+        setRows(mappedRows)
         setLoading(false)
       })
       .catch((err) => {

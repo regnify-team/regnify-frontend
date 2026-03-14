@@ -6,8 +6,29 @@ import { GlobalBusinessFootprint } from '../components/GlobalBusinessFootprint'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 
+interface ApiResponse<T> {
+  success: boolean
+  message: string
+  data: T
+  errorCode: string | null
+  timestamp: string
+}
+
+interface DashboardStatsResponse {
+  totalDocuments: number
+  totalPending: number
+  successRate: number
+}
+
+interface DashboardMetrics {
+  totalDocuments: string | number
+  successRate: string | number
+  pendingItems: string | number
+  lastUpdated: string
+}
+
 export const DashboardPage = () => {
-  const [metrics, setMetrics] = useState({
+  const [metrics, setMetrics] = useState<DashboardMetrics>({
     totalDocuments: '...',
     successRate: '...',
     pendingItems: '...',
@@ -16,8 +37,16 @@ export const DashboardPage = () => {
 
   useEffect(() => {
     axios
-      .get('/api/dashboard')
-      .then((response) => setMetrics(response.data))
+      .get<ApiResponse<DashboardStatsResponse>>('/api/dashboard')
+      .then((response) => {
+        const { data, timestamp } = response.data
+        setMetrics({
+          totalDocuments: data.totalDocuments,
+          successRate: `${data.successRate}%`,
+          pendingItems: data.totalPending,
+          lastUpdated: new Date(timestamp).toLocaleString(),
+        })
+      })
       .catch((err) => console.error('Failed to fetch dashboard metrics:', err))
   }, [])
 

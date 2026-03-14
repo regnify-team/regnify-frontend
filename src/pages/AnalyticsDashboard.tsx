@@ -4,8 +4,45 @@ import axios from 'axios'
 import { DonutChartCard } from '../components/DonutChartCard'
 import { BarChartCard } from '../components/BarChartCard'
 
+interface ApiResponse<T> {
+  success: boolean
+  message: string
+  data: T
+}
+
+interface DashboardStatsResponse {
+  documentsByStatus: Record<string, number>
+  documentsByCountry: Record<string, number>
+  documentsByType: Record<string, number>
+  providerResponseStatus: Record<string, number>
+  dailyStats: Array<{ date: string; count: number }>
+}
+
+interface ChartDataItem {
+  name: string
+  value: number
+  color: string
+}
+
+interface AnalyticsViewData {
+  statusData: ChartDataItem[]
+  countryData: ChartDataItem[]
+  documentTypeData: ChartDataItem[]
+  responseStatusData: ChartDataItem[]
+  timeData: Array<{ day: string; value: number }>
+}
+
+const chartColors = ['#4CAF50', '#2196F3', '#FFA726', '#F44336', '#9C27B0']
+
+const mapRecordToChartData = (dataMap: Record<string, number>): ChartDataItem[] =>
+  Object.entries(dataMap).map(([name, value], index) => ({
+    name,
+    value,
+    color: chartColors[index % chartColors.length],
+  }))
+
 export const AnalyticsDashboard = () => {
-  const [data, setData] = useState({
+  const [data, setData] = useState<AnalyticsViewData>({
     statusData: [],
     countryData: [],
     documentTypeData: [],
@@ -15,8 +52,23 @@ export const AnalyticsDashboard = () => {
 
   useEffect(() => {
     axios
-      .get('/api/analytics')
-      .then((response) => setData(response.data))
+      .get<ApiResponse<DashboardStatsResponse>>('/api/analytics')
+      .then((response) => {
+        const stats = response.data.data
+
+        setData({
+          statusData: mapRecordToChartData(stats.documentsByStatus),
+          countryData: mapRecordToChartData(stats.documentsByCountry),
+          documentTypeData: mapRecordToChartData(stats.documentsByType),
+          responseStatusData: mapRecordToChartData(stats.providerResponseStatus),
+          timeData: stats.dailyStats.map((item) => ({
+            day: new Date(item.date).toLocaleDateString('en-US', {
+              weekday: 'short',
+            }),
+            value: item.count,
+          })),
+        })
+      })
       .catch((err) => console.error('Failed to fetch analytics:', err))
   }, [])
 
