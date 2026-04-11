@@ -6,41 +6,51 @@ import { DashboardPage } from './pages/DashboardPage'
 import { AnalyticsDashboard } from './pages/AnalyticsDashboard'
 import { UploadPage } from './pages/UploadPage'
 import { MainLayout } from './layouts/MainLayout'
+import { AuthProvider } from './contexts/AuthContext'
+import { ProtectedRoute } from './components/ProtectedRoute'
 
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route
-            path="/dashboard"
-            element={
-              <MainLayout>
-                <DashboardPage />
-              </MainLayout>
-            }
-          />
-          <Route
-            path="/analytics"
-            element={
-              <MainLayout>
-                <AnalyticsDashboard />
-              </MainLayout>
-            }
-          />
-          <Route
-            path="/upload"
-            element={
-              <MainLayout>
-                <UploadPage />
-              </MainLayout>
-            }
-          />
-          <Route path="/" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <DashboardPage />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <AnalyticsDashboard />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/upload"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <UploadPage />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </ThemeProvider>
   )
 }

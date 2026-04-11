@@ -11,22 +11,53 @@ import {
   Typography,
   InputAdornment,
   IconButton,
+  Alert,
+  CircularProgress,
 } from '@mui/material'
 import { Visibility, VisibilityOff, ArrowBack } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { Logo } from '../components/Logo'
+import { supabase } from '../utils/supabase'
 
 export const LoginPage = () => {
   const navigate = useNavigate()
+  const [isSignUp, setIsSignUp] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberUsername, setRememberUsername] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Navigate to dashboard (no actual authentication for now)
-    navigate('/dashboard')
+    setIsLoading(true)
+    setError(null)
+    setSuccessMsg(null)
+
+    if (isSignUp) {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      })
+      if (error) {
+        setError(error.message)
+      } else {
+        setSuccessMsg('Check your email to verify your account.')
+      }
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      if (error) {
+        setError(error.message)
+      } else {
+        navigate('/dashboard')
+      }
+    }
+    setIsLoading(false)
   }
 
   return (
@@ -60,17 +91,30 @@ export const LoginPage = () => {
             color="text.secondary"
             sx={{ mb: 4 }}
           >
-            Enter your credentials to sign in
+            {isSignUp ? 'Create a new account' : 'Enter your credentials to sign in'}
           </Typography>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          )}
+
+          {successMsg && (
+            <Alert severity="success" sx={{ mb: 3 }}>
+              {successMsg}
+            </Alert>
+          )}
 
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
-              label="Username"
+              label="Email"
+              type="email"
               required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
               sx={{ mb: 2.5 }}
             />
 
@@ -97,59 +141,86 @@ export const LoginPage = () => {
               }}
             />
 
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mb: 3,
-              }}
-            >
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={rememberUsername}
-                    onChange={(e) => setRememberUsername(e.target.checked)}
-                    size="small"
-                  />
-                }
-                label={
-                  <Typography variant="body2">Remember username</Typography>
-                }
-              />
-              <Link
-                href="#"
-                variant="body2"
-                sx={{ textDecoration: 'none', color: 'primary.main' }}
+            {!isSignUp && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 3,
+                }}
               >
-                Forgot password?
-              </Link>
-            </Box>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={rememberUsername}
+                      onChange={(e) => setRememberUsername(e.target.checked)}
+                      size="small"
+                    />
+                  }
+                  label={
+                    <Typography variant="body2">Remember me</Typography>
+                  }
+                />
+                <Link
+                  href="#"
+                  variant="body2"
+                  sx={{ textDecoration: 'none', color: 'primary.main' }}
+                >
+                  Forgot password?
+                </Link>
+              </Box>
+            )}
 
             <Button
               type="submit"
               fullWidth
               variant="contained"
               size="large"
+              disabled={isLoading}
               sx={{ mb: 2, py: 1.5 }}
             >
-              Sign in
+              {isLoading ? <CircularProgress size={24} /> : isSignUp ? 'Sign up' : 'Sign in'}
             </Button>
+
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+              <Typography variant="body2">
+                {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+                <Link
+                  component="button"
+                  type="button"
+                  variant="body2"
+                  onClick={() => {
+                    setIsSignUp(!isSignUp)
+                    setError(null)
+                    setSuccessMsg(null)
+                  }}
+                  sx={{ textDecoration: 'none', color: 'primary.main', verticalAlign: 'baseline' }}
+                >
+                  {isSignUp ? 'Sign in' : 'Sign up'}
+                </Link>
+              </Typography>
+            </Box>
 
             <Box sx={{ display: 'flex', justifyContent: 'center' }}>
               <Link
                 href="#"
                 variant="body2"
+                onClick={(e) => {
+                  e.preventDefault()
+                  if (isSignUp) setIsSignUp(false)
+                }}
                 sx={{
                   textDecoration: 'none',
                   color: 'text.secondary',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 0.5,
+                  visibility: isSignUp ? 'visible' : 'hidden'
                 }}
               >
                 <ArrowBack fontSize="small" />
-                Back
+                Back to login
               </Link>
             </Box>
           </form>
