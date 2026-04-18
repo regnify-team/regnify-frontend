@@ -13,11 +13,20 @@ import {
 import { Help as HelpIcon, AccountCircle, Language } from '@mui/icons-material'
 import { useState } from 'react'
 import { Logo } from './Logo'
+import { useNavigate } from 'react-router-dom'
 
 export const TopNavBar = () => {
+  const navigate = useNavigate()
   const [helpAnchor, setHelpAnchor] = useState<null | HTMLElement>(null)
   const [accountAnchor, setAccountAnchor] = useState<null | HTMLElement>(null)
   const [language, setLanguage] = useState('EN')
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('refresh_token')
+    setAccountAnchor(null)
+    navigate('/login')
+  }
 
   return (
     <AppBar
@@ -98,7 +107,7 @@ export const TopNavBar = () => {
           >
             <MenuItem onClick={() => setAccountAnchor(null)}>Profile</MenuItem>
             <MenuItem onClick={() => setAccountAnchor(null)}>Settings</MenuItem>
-            <MenuItem onClick={() => setAccountAnchor(null)}>Logout</MenuItem>
+            <MenuItem onClick={handleLogout}>Logout</MenuItem>
           </Menu>
         </Box>
       </Toolbar>

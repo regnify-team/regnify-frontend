@@ -4,13 +4,13 @@ import { MetricCard } from '../components/MetricCard'
 import { GlobalBusinessFootprint } from '../components/GlobalBusinessFootprint'
 
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import { api } from '../utils/api'
 
 interface ApiResponse<T> {
   success: boolean
   message: string
   data: T
-  errorCode: string | null
+  errorCode?: string | null
   timestamp: string
 }
 
@@ -36,8 +36,8 @@ export const DashboardPage = () => {
   })
 
   useEffect(() => {
-    axios
-      .get<ApiResponse<DashboardStatsResponse>>('/api/dashboard')
+    api
+      .get<ApiResponse<DashboardStatsResponse>>('/dashboard/stats')
       .then((response) => {
         const { data, timestamp } = response.data
         setMetrics({
@@ -47,6 +47,17 @@ export const DashboardPage = () => {
           lastUpdated: new Date(timestamp).toLocaleString(),
         })
       })
+      .catch(() =>
+        api.get<ApiResponse<DashboardStatsResponse>>('/dashboard').then((response) => {
+          const { data, timestamp } = response.data
+          setMetrics({
+            totalDocuments: data.totalDocuments,
+            successRate: `${data.successRate}%`,
+            pendingItems: data.totalPending,
+            lastUpdated: new Date(timestamp).toLocaleString(),
+          })
+        })
+      )
       .catch((err) => console.error('Failed to fetch dashboard metrics:', err))
   }, [])
 

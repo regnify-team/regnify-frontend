@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Box,
   Card,
@@ -14,49 +14,73 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material'
-import { Visibility, VisibilityOff, ArrowBack } from '@mui/icons-material'
+import { Visibility, VisibilityOff } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { Logo } from '../components/Logo'
-import { supabase } from '../utils/supabase'
+import { api } from '../utils/api'
+
+interface LoginResponseData {
+  token: string
+  refreshToken?: string
+}
+
+interface ApiResponse<T> {
+  success: boolean
+  message: string
+  data: T
+}
 
 export const LoginPage = () => {
   const navigate = useNavigate()
-  const [isSignUp, setIsSignUp] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [rememberUsername, setRememberUsername] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [successMsg, setSuccessMsg] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (localStorage.getItem('auth_token')) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [navigate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
-    setSuccessMsg(null)
 
-    if (isSignUp) {
-      const { error } = await supabase.auth.signUp({
-        email,
+    try {
+      // Ensure stale tokens are not sent as auth headers on login retries.
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('refresh_token')
+
+      const response = await api.post<ApiResponse<LoginResponseData>>('/auth/login', {
+        username,
         password,
+        rememberMe: rememberUsername,
       })
-      if (error) {
-        setError(error.message)
-      } else {
-        setSuccessMsg('Check your email to verify your account.')
+
+      const { token, refreshToken } = response.data.data
+
+      localStorage.setItem('auth_token', token)
+      if (refreshToken) {
+        localStorage.setItem('refresh_token', refreshToken)
       }
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      if (error) {
-        setError(error.message)
+
+      navigate('/dashboard')
+    } catch (err) {
+      const fallbackMessage = 'Invalid credentials or failed to login.'
+      if (typeof err === 'object' && err && 'response' in err) {
+        const errorResponse = err as {
+          response?: { data?: { message?: string } }
+        }
+        setError(errorResponse.response?.data?.message ?? fallbackMessage)
       } else {
-        navigate('/dashboard')
+        setError(fallbackMessage)
       }
     }
+
     setIsLoading(false)
   }
 
@@ -91,7 +115,7 @@ export const LoginPage = () => {
             color="text.secondary"
             sx={{ mb: 4 }}
           >
-            {isSignUp ? 'Create a new account' : 'Enter your credentials to sign in'}
+            Enter your credentials to sign in
           </Typography>
 
           {error && (
@@ -100,21 +124,14 @@ export const LoginPage = () => {
             </Alert>
           )}
 
-          {successMsg && (
-            <Alert severity="success" sx={{ mb: 3 }}>
-              {successMsg}
-            </Alert>
-          )}
-
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
-              label="Email"
-              type="email"
+              label="Username / Email"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your username"
               sx={{ mb: 2.5 }}
             />
 
@@ -141,36 +158,32 @@ export const LoginPage = () => {
               }}
             />
 
-            {!isSignUp && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  mb: 3,
-                }}
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 3,
+              }}
+            >
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={rememberUsername}
+                    onChange={(e) => setRememberUsername(e.target.checked)}
+                    size="small"
+                  />
+                }
+                label={<Typography variant="body2">Remember me</Typography>}
+              />
+              <Link
+                href="#"
+                variant="body2"
+                sx={{ textDecoration: 'none', color: 'primary.main' }}
               >
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={rememberUsername}
-                      onChange={(e) => setRememberUsername(e.target.checked)}
-                      size="small"
-                    />
-                  }
-                  label={
-                    <Typography variant="body2">Remember me</Typography>
-                  }
-                />
-                <Link
-                  href="#"
-                  variant="body2"
-                  sx={{ textDecoration: 'none', color: 'primary.main' }}
-                >
-                  Forgot password?
-                </Link>
-              </Box>
-            )}
+                Forgot password?
+              </Link>
+            </Box>
 
             <Button
               type="submit"
@@ -180,49 +193,8 @@ export const LoginPage = () => {
               disabled={isLoading}
               sx={{ mb: 2, py: 1.5 }}
             >
-              {isLoading ? <CircularProgress size={24} /> : isSignUp ? 'Sign up' : 'Sign in'}
+              {isLoading ? <CircularProgress size={24} /> : 'Sign in'}
             </Button>
-
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-              <Typography variant="body2">
-                {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
-                <Link
-                  component="button"
-                  type="button"
-                  variant="body2"
-                  onClick={() => {
-                    setIsSignUp(!isSignUp)
-                    setError(null)
-                    setSuccessMsg(null)
-                  }}
-                  sx={{ textDecoration: 'none', color: 'primary.main', verticalAlign: 'baseline' }}
-                >
-                  {isSignUp ? 'Sign in' : 'Sign up'}
-                </Link>
-              </Typography>
-            </Box>
-
-            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-              <Link
-                href="#"
-                variant="body2"
-                onClick={(e) => {
-                  e.preventDefault()
-                  if (isSignUp) setIsSignUp(false)
-                }}
-                sx={{
-                  textDecoration: 'none',
-                  color: 'text.secondary',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  visibility: isSignUp ? 'visible' : 'hidden'
-                }}
-              >
-                <ArrowBack fontSize="small" />
-                Back to login
-              </Link>
-            </Box>
           </form>
         </CardContent>
       </Card>

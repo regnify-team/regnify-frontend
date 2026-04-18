@@ -1,6 +1,5 @@
 import { Box, Chip, IconButton, Stack, Typography } from '@mui/material'
 import { useState, useEffect } from 'react'
-import axios from 'axios'
 import { DataGrid, GridToolbar } from '@mui/x-data-grid'
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid'
 import {
@@ -9,6 +8,7 @@ import {
   Refresh,
   MoreVert,
 } from '@mui/icons-material'
+import { api } from '../utils/api'
 
 interface ApiResponse<T> {
   success: boolean
@@ -29,7 +29,7 @@ interface InvoiceApiItem {
 }
 
 interface InvoicesPageResponse {
-  content: InvoiceApiItem[]
+  content?: InvoiceApiItem[]
 }
 
 interface InvoiceRow {
@@ -68,6 +68,19 @@ function CustomToolbar() {
 }
 
 export const InvoiceTable = () => {
+  const mapInvoicesToRows = (invoices: InvoiceApiItem[]) =>
+    invoices.map((invoice) => ({
+      id: invoice.id,
+      invoiceNo: invoice.invoiceNumber,
+      docDate: invoice.docDate,
+      procDate: invoice.proDate,
+      sender: invoice.sender,
+      receiver: invoice.receiver,
+      status: invoice.status,
+      businessStatus: invoice.businessStatus,
+      providerResponse: invoice.providerResponse,
+    }))
+
   const columns: GridColDef[] = [
     {
       field: 'invoiceNo',
@@ -141,24 +154,24 @@ export const InvoiceTable = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    axios
-      .get<ApiResponse<InvoicesPageResponse>>('/api/invoices')
+    api
+      .get<ApiResponse<InvoicesPageResponse>>('/invoices', {
+        params: {
+          page: 0,
+          size: 50,
+        },
+      })
       .then((response) => {
-        const mappedRows = response.data.data.content.map((invoice) => ({
-          id: invoice.id,
-          invoiceNo: invoice.invoiceNumber,
-          docDate: invoice.docDate,
-          procDate: invoice.proDate,
-          sender: invoice.sender,
-          receiver: invoice.receiver,
-          status: invoice.status,
-          businessStatus: invoice.businessStatus,
-          providerResponse: invoice.providerResponse,
-        }))
-
-        setRows(mappedRows)
+        const invoices = response.data.data.content ?? []
+        setRows(mapInvoicesToRows(invoices))
         setLoading(false)
       })
+      .catch(() =>
+        api.get<ApiResponse<InvoiceApiItem[]>>('/invoices').then((response) => {
+          setRows(mapInvoicesToRows(response.data.data))
+          setLoading(false)
+        })
+      )
       .catch((err) => {
         console.error('Failed to fetch invoices:', err)
         setLoading(false)

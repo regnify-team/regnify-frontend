@@ -1,8 +1,8 @@
 import { Box, Typography, Grid } from '@mui/material'
 import { useState, useEffect } from 'react'
-import axios from 'axios'
 import { DonutChartCard } from '../components/DonutChartCard'
 import { BarChartCard } from '../components/BarChartCard'
+import { api } from '../utils/api'
 
 interface ApiResponse<T> {
   success: boolean
@@ -51,8 +51,8 @@ export const AnalyticsDashboard = () => {
   })
 
   useEffect(() => {
-    axios
-      .get<ApiResponse<DashboardStatsResponse>>('/api/analytics')
+    api
+      .get<ApiResponse<DashboardStatsResponse>>('/dashboard/stats')
       .then((response) => {
         const stats = response.data.data
 
@@ -69,6 +69,24 @@ export const AnalyticsDashboard = () => {
           })),
         })
       })
+      .catch(() =>
+        api.get<ApiResponse<DashboardStatsResponse>>('/analytics').then((response) => {
+          const stats = response.data.data
+
+          setData({
+            statusData: mapRecordToChartData(stats.documentsByStatus),
+            countryData: mapRecordToChartData(stats.documentsByCountry),
+            documentTypeData: mapRecordToChartData(stats.documentsByType),
+            responseStatusData: mapRecordToChartData(stats.providerResponseStatus),
+            timeData: stats.dailyStats.map((item) => ({
+              day: new Date(item.date).toLocaleDateString('en-US', {
+                weekday: 'short',
+              }),
+              value: item.count,
+            })),
+          })
+        })
+      )
       .catch((err) => console.error('Failed to fetch analytics:', err))
   }, [])
 
