@@ -1,6 +1,6 @@
 import { createTheme } from '@mui/material/styles'
 
-// Create a custom theme for Regnify
+// Create a custom theme for Accutax
 export const theme = createTheme({
   palette: {
     primary: {

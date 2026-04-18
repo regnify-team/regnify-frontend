@@ -1,4 +1,4 @@
-# Regnify - E-Invoice Correction App
+# Accutax - E-Invoice Correction App
 
 A React + TypeScript application for helping companies legally correct e-invoices to governments.
 

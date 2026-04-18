@@ -107,7 +107,7 @@ export const LoginPage = () => {
           </Box>
 
           <Typography variant="h5" align="center" fontWeight={600} gutterBottom>
-            Welcome to Regnify
+            Welcome to Accutax
           </Typography>
           <Typography
             variant="body2"

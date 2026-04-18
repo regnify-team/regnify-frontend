@@ -39,7 +39,7 @@ export const Logo = ({ size = 'medium', showText = true }: LogoProps) => {
           variant="h6"
           sx={{ fontWeight: 600, color: 'text.primary' }}
         >
-          Regnify
+          Accutax
         </Typography>
       )}
     </Box>
